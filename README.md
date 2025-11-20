@@ -1,53 +1,229 @@
-# ChemBERTa
-ChemBERTa: A collection of BERT-like models applied to chemical SMILES data for drug design, chemical modelling, and property prediction. To be presented at [Baylearn](https://baylearn2020.splashthat.com/) and the [Royal Society of Chemistry's Chemical Science Symposium](https://www.rsc.org/events/detail/42791/chemical-science-symposium-2020-how-can-machine-learning-and-autonomy-accelerate-chemistry).
+# FlavorBERT: A Foundational Model for Flavor Prediction
 
-[Tutorial](https://github.com/deepchem/deepchem/blob/master/examples/tutorials/Transfer_Learning_With_ChemBERTa_Transformers.ipynb) <br />
-[ArXiv ChemBERTa-2 Paper](https://arxiv.org/abs/2209.01712) <br />
-[Arxiv ChemBERTa Paper](https://arxiv.org/abs/2010.09885) <br />
-[Poster](https://chemsci20.ipostersessions.com/Default.aspx?s=99-39-E6-B6-B0-0E-E1-D8-FB-66-1A-44-DC-A3-43-BA) <br />
-[Abstract](https://t.co/dkA5rMvYrE?amp=1) <br />
-[BibTex](https://scholar.googleusercontent.com/scholar.bib?q=info:FzDMp7nctLUJ:scholar.google.com/&output=citation&scisdr=CgWWnePlEM-dmmZXtDE:AAGBfm0AAAAAX5RSrDGmJTVdPMFfzRSs5UY9lD4iRvvd&scisig=AAGBfm0AAAAAX5RSrGbFzGg583aNAYQw1Lap1K79xkEm&scisf=4&ct=citation&cd=-1&hl=en)
+FlavorBERT is a foundational transformer model for predicting flavor properties from molecular structures. This project builds upon [ChemBERTa](https://github.com/seyonechithrananda/bert-loves-chemistry), a BERT-like model for chemical SMILES, and applies it to flavor prediction tasks using the [FART (Flavor and Aroma Recognition Task)](https://github.com/fart-lab/fart) dataset framework. The model combines both taste and smell prediction capabilities, providing a comprehensive approach to flavor analysis.
 
-License: MIT License
+## Overview
 
-Right now the notebooks are all for the RoBERTa model (a variant of BERT) trained on the task of masked-language modelling (MLM). Training was done over 10 epochs until loss converged to around 0.26 on the ZINC 250k dataset. The model weights for ChemBERTA pre-trained on various datasets (ZINC 100k, ZINC 250k, PubChem 100k, PubChem 250k, PubChem 1M, PubChem 10M) are available using [HuggingFace](https://huggingface.co/seyonec). We expect to continue to release larger models pre-trained on even larger subsets of ZINC, CHEMBL, and PubChem in the near future. 
+Flavor is the complex perception that combines taste (sweet, bitter, sour, umami) and smell (aroma), and is crucial for food science, flavor compound discovery, and rational food design. FlavorBERT addresses this challenge by:
 
-This library is currently primarily a set of notebooks with our pre-training and fine-tuning setup, and will be updated soon with model implementation + attention visualization code, likely after the Arxiv publication. Stay tuned! 
+1. **Pre-training** a RoBERTa-based transformer model on large-scale molecular datasets (FoodDB, PubChem) using masked language modeling (MLM)
+2. **Fine-tuning** the pre-trained model on various molecular property prediction tasks
+3. **Evaluation** on flavor-specific datasets (FART) to predict taste categories from chemical structures
 
-I hope this is of use to developers, students and researchers exploring the use of transformers and the attention mechanism for chemistry!
+The architecture leverages the attention mechanism to learn molecular representations that capture structural features relevant to flavor perception.
 
-# Citing Our Work
-Please cite ChemBERTa-2's [ArXiv](https://arxiv.org/abs/2209.01712) paper if you have used these models, notebooks, or examples in any way. The BibTex is available below: 
+## Related Work
+
+This project builds upon:
+
+- **ChemBERTa**: A collection of BERT-like models applied to chemical SMILES data for drug design and chemical property prediction
+  - Repository: [bert-loves-chemistry](https://github.com/seyonechithrananda/bert-loves-chemistry)
+  - Paper: [ChemBERTa: Large-Scale Self-Supervised Pretraining for Molecular Property Prediction](https://arxiv.org/abs/2010.09885)
+
+- **FART**: Flavor and Aroma Recognition Task dataset and models for molecular taste prediction
+  - Repository: [fart-lab/fart](https://github.com/fart-lab/fart/tree/main)
+  - Paper: [FART: A Transformer-Based Model for Flavor Prediction](https://www.nature.com/articles/s41538-025-00474-z) (Nature Scientific Reports)
+
+## Installation
+
+### Prerequisites
+
+- Conda (for environment management)
+- CUDA-capable GPU (recommended for training)
+
+### Setup
+
+1. **Create the conda environment:**
+
+   ```bash
+   conda env create -f environment.yml
+   ```
+
+2. **Activate the environment:**
+
+   ```bash
+   conda activate flavorbert_env
+   ```
+
+3. **Install the package in development mode:**
+
+   ```bash
+   pip install -e .
+   ```
+
+4. **Set up Weights & Biases (optional, for experiment tracking):**
+
+   ```bash
+   wandb login
+   ```
+
+## Usage
+
+### 1. Pre-training ChemBERTa on Molecular Data
+
+Train a RoBERTa model using masked language modeling on molecular SMILES data. **Important**: Change `run_name` and `output_dir` for each new training run.
+
+```bash
+python chemberta/train/train_roberta.py \
+    --model_type=mlm \
+    --dataset_path=chemberta/data/foodb_1k_smiles.txt \
+    --output_dir=chemberta/train/my_training4 \
+    --run_name=test_run \
+    --per_device_train_batch_size=4 \
+    --num_hidden_layers=6 \
+    --num_attention_heads=12 \
+    --num_train_epochs=10 \
+    --eval_steps=50 \
+    --save_steps=50
 ```
-@article{ahmad2022chemberta,
-  title={Chemberta-2: Towards chemical foundation models},
-  author={Ahmad, Walid and Simon, Elana and Chithrananda, Seyone and Grand, Gabriel and Ramsundar, Bharath},
-  journal={arXiv preprint arXiv:2209.01712},
-  year={2022}
+
+**Parameters:**
+
+- `--model_type`: Model type (use `mlm` for masked language modeling)
+- `--dataset_path`: Path to SMILES dataset file (one SMILES string per line)
+- `--output_dir`: Directory to save model checkpoints
+- `--run_name`: Experiment name for logging
+- `--per_device_train_batch_size`: Batch size per device
+- `--num_hidden_layers`: Number of transformer layers
+- `--num_attention_heads`: Number of attention heads
+- `--num_train_epochs`: Number of training epochs
+- `--eval_steps`: Steps between evaluations
+- `--save_steps`: Steps between model checkpoints
+
+### 2. Fine-tuning on Molecular Property Prediction Tasks
+
+Fine-tune the pre-trained model on multiple molecular property prediction datasets from DeepChem's MoleculeNet. **Important**: Match `output_dir` and `run_name` with your pre-training configuration.
+
+```bash
+python chemberta/finetune/finetune.py \
+    --datasets=bace_classification,bace_regression,bbbp,clearance,clintox,delaney,lipo,tox21 \
+    --output_dir=chemberta/finetune/my_dir \
+    --run_name=my_run \
+    --pretrained_model_name_or_path="chemberta/train/my_training4/test_run/final" \
+    --n_trials=20 \
+    --n_seeds=5
+```
+
+**Parameters:**
+
+- `--datasets`: Comma-separated list of MoleculeNet datasets
+- `--output_dir`: Directory to save fine-tuning results
+- `--run_name`: Experiment name
+- `--pretrained_model_name_or_path`: Path to pre-trained model checkpoint
+- `--n_trials`: Number of hyperparameter optimization trials
+- `--n_seeds`: Number of random seeds for evaluation
+
+**Available Datasets:**
+
+- `bace_classification`: Binding affinity classification
+- `bace_regression`: Binding affinity regression
+- `bbbp`: Blood-brain barrier penetration
+- `clearance`: Molecular clearance prediction
+- `clintox`: Clinical toxicity
+- `delaney`: Aqueous solubility
+- `lipo`: Lipophilicity
+- `tox21`: Toxicology challenge
+
+### 3. FART Evaluation (Flavor Prediction)
+
+Evaluate the model on the FART dataset for flavor/taste prediction tasks:
+
+```bash
+python fart/models/FART_Models.py \
+    --run_name my_experiment \
+    --model_checkpoint chemberta/train/my_training4/test_run/final
+```
+
+**Parameters:**
+
+- `--run_name`: Experiment name for logging
+- `--model_checkpoint`: Path to pre-trained or fine-tuned model checkpoint
+
+The FART evaluation predicts taste categories (sweet, bitter, sour, umami, undefined) from molecular SMILES strings.
+
+## Project Structure
+
+```text
+flavorBERT/
+├── chemberta/              # ChemBERTa model implementation
+│   ├── train/              # Pre-training scripts
+│   ├── finetune/           # Fine-tuning scripts
+│   ├── data/               # Training datasets
+│   ├── utils/              # Utility functions
+│   └── bertviz_clone/      # Attention visualization tools
+├── fart/                   # FART evaluation framework
+│   ├── models/             # Model training and evaluation
+│   ├── dataset/            # FART dataset and splits
+│   └── plots/              # Visualization scripts
+├── environment.yml         # Conda environment specification
+└── setup.py               # Package setup configuration
+```
+
+## Datasets
+
+### Pre-training Datasets
+
+- **FoodDB SMILES**: Food-related molecular structures
+- **PubChem**: Large-scale chemical database subsets
+- Located in: `chemberta/data/`
+
+### Fine-tuning Datasets
+
+- **MoleculeNet**: Standard benchmark datasets for molecular property prediction
+- Automatically downloaded when running fine-tuning scripts
+
+### Flavor Datasets
+
+- **FART Dataset**: 15,025 curated molecular tastants with taste labels (sweet, bitter, sour, umami, undefined)
+- Located in: `fart/dataset/`
+- For more details, see the [FART repository](https://github.com/fart-lab/fart)
+
+## Model Architecture
+
+FlavorBERT uses a RoBERTa-based transformer architecture:
+
+- **Base Model**: RoBERTa (Robustly Optimized BERT Pretraining Approach)
+- **Input**: SMILES strings (text representation of molecular structures)
+- **Pre-training Task**: Masked Language Modeling (MLM)
+- **Fine-tuning Tasks**: Classification and regression for molecular properties
+- **Flavor Prediction**: Multi-label classification for taste categories
+
+## Citation
+
+If you use FlavorBERT in your research, please cite:
+
+```bibtex
+@article{chemberta2020,
+  title={ChemBERTa: Large-Scale Self-Supervised Pretraining for Molecular Property Prediction},
+  author={Chithrananda, Seyone and Grand, Gabriel and Ramsundar, Bharath},
+  journal={arXiv preprint arXiv:2010.09885},
+  year={2020}
+}
+
+@article{fart2025,
+  title={FART: A Transformer-Based Model for Flavor Prediction},
+  author={...},
+  journal={Nature Scientific Reports},
+  year={2025},
+  doi={https://www.nature.com/articles/s41538-025-00474-z}
 }
 ```
 
-# Example
-You can load the tokenizer + model for MLM prediction tasks using the following code:
+## License
 
-```
-from transformers import AutoModelWithLMHead, AutoTokenizer, pipeline
+MIT License - see [LICENSE](LICENSE) file for details.
 
-#any model weights from the link above will work here
-model = AutoModelWithLMHead.from_pretrained("seyonec/ChemBERTa-zinc-base-v1")
-tokenizer = AutoTokenizer.from_pretrained("seyonec/ChemBERTa-zinc-base-v1")
+## Acknowledgments
 
-fill_mask = pipeline('fill-mask', model=model, tokenizer=tokenizer)
-```
+- [ChemBERTa](https://github.com/seyonechithrananda/bert-loves-chemistry) for the foundational model architecture
+- [FART Lab](https://github.com/fart-lab/fart) for the flavor dataset and evaluation framework
+- [Hugging Face Transformers](https://github.com/huggingface/transformers) for the transformer implementation
+- [DeepChem](https://github.com/deepchem/deepchem) for molecular datasets and tools
 
-# Todo:
-- [x]  Official DeepChem implementation of ChemBERTa using model API (In progress)
-- [X]  Open-source attention visualization suite used in paper (After formal publication - Beginning of September).
-- [x]  Release larger pre-trained models, and support for a wider array of property prediction tasks (BBBP, etc). - See [HuggingFace](https://huggingface.co/seyonec)
-- [x]  Finish writing notebook to train model
-- [x]  Finish notebook to preload and run predictions on a single molecule —> test if HuggingFace works
-- [x]  Train RoBERTa model until convergence
-- [x]  Upload weights onto HuggingFace
-- [x]  Create tutorial using evaluation + fine-tuning notebook.
-- [x]  Create documentation + writing, visualizations for notebook.
-- [x]  Setup PR into DeepChem
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Contact
+
+For questions or issues, please open an issue on GitHub.

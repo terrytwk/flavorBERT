@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 import torch
-from nlp import load_dataset
+from datasets import load_dataset
 from rdkit import Chem
 from rdkit.ML.Descriptors.MoleculeDescriptors import MolecularDescriptorCalculator
 from torch.utils.data import Dataset

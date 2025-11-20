@@ -1,0 +1,36 @@
+{
+  "run_name": "my_experiment",
+  "output_dir": "./results/my_experiment",
+  "training_config": {
+    "num_train_epochs": 2,
+    "per_device_train_batch_size": 16,
+    "per_device_eval_batch_size": 16,
+    "weight_decay": 0.01,
+    "evaluation_strategy": "steps",
+    "save_strategy": "steps"
+  },
+  "total_flos": 417863002871808.0,
+  "best_metric": 0.7811082601547241,
+  "best_model_checkpoint": "./results/my_experiment/checkpoint-1000",
+  "eval": {
+    "loss": 0.7811082601547241,
+    "accuracy": 0.7067435669920142,
+    "runtime": 7.9457,
+    "samples_per_second": 283.677,
+    "steps_per_second": 17.746
+  },
+  "train": {
+    "loss": 0.937137522595994,
+    "grad_norm": 1.6269453763961792,
+    "learning_rate": 1.2006079027355625e-05,
+    "epoch": 2.0,
+    "step": 1316,
+    "runtime": 286.1193,
+    "samples_per_second": 73.515,
+    "steps_per_second": 4.599,
+    "global_step": 1316
+  },
+  "other": {
+    "total_flos": 417863002871808.0
+  }
+}

@@ -54,8 +54,6 @@ from sklearn.metrics import (
 from transformers import RobertaConfig, RobertaTokenizerFast, Trainer, TrainingArguments
 from transformers.trainer_callback import EarlyStoppingCallback
 
-FLAGS = flags.FLAGS
-
 # Settings
 flags.DEFINE_string(name="output_dir", default="default_dir", help="")
 flags.DEFINE_boolean(name="overwrite_output_dir", default=True, help="")
@@ -128,6 +126,8 @@ flags.DEFINE_integer(name="max_tokenizer_len", default=512, help="")
 
 flags.mark_flag_as_required("datasets")
 
+FLAGS = flags.FLAGS
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["WANDB_DISABLED"] = "true"
 
@@ -184,7 +184,7 @@ def prune_state_dict(model_dir):
     assert os.path.exists(
         state_dict_path
     ), f"No `pytorch_model.bin` file found in {model_dir}"
-    loaded_state_dict = torch.load(state_dict_path)
+    loaded_state_dict = torch.load(state_dict_path, weights_only=False)
     state_keys = loaded_state_dict.keys()
     keys_to_remove = [
         k for k in state_keys if k.startswith("regression") or k.startswith("norm")
@@ -200,14 +200,14 @@ def finetune_single_dataset(dataset_name, dataset_type, run_dir, is_molnet):
     torch.manual_seed(FLAGS.seed)
 
     tokenizer = RobertaTokenizerFast.from_pretrained(
-        FLAGS.tokenizer_path, max_len=FLAGS.max_tokenizer_len, use_auth_token=True
+        FLAGS.tokenizer_path, max_len=FLAGS.max_tokenizer_len, token=None
     )
 
     finetune_datasets = get_finetune_datasets(dataset_name, tokenizer, is_molnet)
 
     if FLAGS.pretrained_model_name_or_path:
         config = RobertaConfig.from_pretrained(
-            FLAGS.pretrained_model_name_or_path, use_auth_token=True
+            FLAGS.pretrained_model_name_or_path, token=None
         )
     else:
         config = RobertaConfig(
@@ -242,7 +242,7 @@ def finetune_single_dataset(dataset_name, dataset_type, run_dir, is_molnet):
                 FLAGS.pretrained_model_name_or_path,
                 config=config,
                 state_dict=state_dict,
-                use_auth_token=True,
+                token=None,
             )
             if FLAGS.freeze_base_model:
                 for name, param in model.base_model.named_parameters():
@@ -254,6 +254,7 @@ def finetune_single_dataset(dataset_name, dataset_type, run_dir, is_molnet):
 
     training_args = TrainingArguments(
         evaluation_strategy="epoch",
+        save_strategy="epoch",
         output_dir=run_dir,
         overwrite_output_dir=FLAGS.overwrite_output_dir,
         per_device_eval_batch_size=FLAGS.per_device_eval_batch_size,

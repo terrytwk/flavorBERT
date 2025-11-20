@@ -1,4 +1,4 @@
-name: new_chemberta_env
+name: flavorbert_env
 channels:
   - pytorch
   - huggingface
@@ -6,7 +6,7 @@ channels:
   - conda-forge
 dependencies:
   - absl-py
-  - cudatoolkit
+  # - cudatoolkit
   - ipython
   - jupyterlab
   - matplotlib
@@ -29,7 +29,10 @@ dependencies:
   - transformers
   - wandb
   - pip:
+    - accelerate>=0.20.1
     - datasets
+    - evaluate
+    - transformers>=4.40.0
     - deepchem>=2.4.0rc1.dev20200916050731
     - simpletransformers
     - tensorflow>=2.0
