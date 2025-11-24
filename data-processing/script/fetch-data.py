@@ -314,39 +314,56 @@ def fetch_foodb_smiles(output_file="data-processing/data/foodb/foodb_smiles.txt"
         else:
             print("Appending to existing file...")
     
-    # Create temporary directory for downloads
+    # Check if zip file already exists in data directory
+    data_dir = output_path.parent
+    zip_filename = Path(zip_url).name  # Extract filename from URL
+    local_zip_file = data_dir / zip_filename
+    
+    # Create temporary directory for extraction
     temp_dir = Path(tempfile.mkdtemp())
-    zip_file = temp_dir / "foodb_json.zip"
+    extract_dir = temp_dir / "foodb_extracted"
+    extract_dir.mkdir(exist_ok=True)
     
     # Store temp directory path for potential manual cleanup
     print(f"Temporary directory: {temp_dir}")
     print("(This will be automatically cleaned up on exit)")
     
     try:
-        # Download the zip file
-        print("\nDownloading FoodDB JSON zip file...")
-        response = requests.get(zip_url, stream=True)
-        response.raise_for_status()
-        
-        total_size = int(response.headers.get('content-length', 0))
-        
-        # Download with progress bar
-        with open(zip_file, 'wb') as f, tqdm(
-            desc="Downloading foodb_2020_04_07_json.zip",
-            total=total_size,
-            unit='B',
-            unit_scale=True,
-            unit_divisor=1024
-        ) as pbar:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-                    pbar.update(len(chunk))
+        # Check if zip file exists locally
+        if local_zip_file.exists():
+            print(f"\nFound existing zip file: {local_zip_file}")
+            print("Using existing file instead of downloading.")
+            zip_file = local_zip_file
+        else:
+            # Download the zip file
+            print("\nDownloading FoodDB JSON zip file...")
+            zip_file = temp_dir / zip_filename
+            
+            response = requests.get(zip_url, stream=True)
+            response.raise_for_status()
+            
+            total_size = int(response.headers.get('content-length', 0))
+            
+            # Download with progress bar
+            with open(zip_file, 'wb') as f, tqdm(
+                desc=f"Downloading {zip_filename}",
+                total=total_size,
+                unit='B',
+                unit_scale=True,
+                unit_divisor=1024
+            ) as pbar:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+                        pbar.update(len(chunk))
+            
+            # Save downloaded file to data directory for future use
+            print(f"\nSaving zip file to {local_zip_file} for future use...")
+            shutil.copy2(zip_file, local_zip_file)
+            print("Zip file saved successfully.")
         
         # Extract the zip file
         print("\nExtracting zip file...")
-        extract_dir = temp_dir / "foodb_extracted"
-        extract_dir.mkdir(exist_ok=True)
         
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
             zip_ref.extractall(extract_dir)
