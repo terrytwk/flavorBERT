@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Script to fetch compound data from various sources.
-Currently supports PubChem database via FTP bulk download.
+Currently supports PubChem database via FTP bulk download and FoodDB.
 """
 
 import gzip
@@ -10,6 +10,9 @@ from pathlib import Path
 from tqdm import tqdm
 import tempfile
 import re
+import zipfile
+import json
+import shutil
 
 try:
     from rdkit import Chem
@@ -242,6 +245,10 @@ def fetch_pubchem_smiles(output_file="data-processing/data/pubchem/pubchem_isome
     # Create temporary directory for downloads
     temp_dir = Path(tempfile.mkdtemp())
     
+    # Store temp directory path for potential manual cleanup
+    print(f"Temporary directory: {temp_dir}")
+    print("(This will be automatically cleaned up on exit)")
+    
     total_smiles = 0
     
     try:
@@ -257,17 +264,156 @@ def fetch_pubchem_smiles(output_file="data-processing/data/pubchem/pubchem_isome
                 print(f"  Error processing {sdf_filename}: {e}")
                 continue
     
+    except KeyboardInterrupt:
+        print("\n\nInterrupted by user. Cleaning up temporary files...")
+        raise
+    except Exception as e:
+        print(f"\n\nError occurred: {e}")
+        print(f"Temporary files may remain at: {temp_dir}")
+        raise
     finally:
         # Clean up temporary directory
         try:
-            temp_dir.rmdir()
-        except:
-            pass
+            if temp_dir.exists():
+                shutil.rmtree(temp_dir)
+                print(f"\nCleaned up temporary directory: {temp_dir}")
+        except Exception as cleanup_error:
+            print(f"\nWarning: Could not clean up temporary directory: {cleanup_error}")
+            print(f"Please manually remove: {temp_dir}")
     
     print(f"\n{'='*60}")
     print(f"Successfully extracted {total_smiles} SMILES strings")
     print(f"SMILES strings saved to: {output_path.absolute()}")
     print(f"{'='*60}")
+
+
+def fetch_foodb_smiles(output_file="data-processing/data/foodb/foodb_smiles.txt",
+                       zip_url="https://foodb.ca/public/system/downloads/foodb_2020_04_07_json.zip"):
+    """
+    Download FoodDB JSON zip file and extract SMILES strings.
+    
+    Args:
+        output_file (str): Output file path for SMILES strings
+        zip_url (str): URL to download FoodDB JSON zip file
+    """
+    print("=" * 60)
+    print("FoodDB Compound Data Fetcher")
+    print("=" * 60)
+    print(f"Download URL: {zip_url}")
+    print("\nThis will download and process FoodDB compounds.")
+    
+    # Create output directory
+    output_path = Path(output_file)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Clear output file if it exists (start fresh)
+    if output_path.exists():
+        response = input(f"\nOutput file {output_path} already exists. Overwrite? (y/n): ").strip().lower()
+        if response == 'y':
+            output_path.unlink()
+        else:
+            print("Appending to existing file...")
+    
+    # Create temporary directory for downloads
+    temp_dir = Path(tempfile.mkdtemp())
+    zip_file = temp_dir / "foodb_json.zip"
+    
+    # Store temp directory path for potential manual cleanup
+    print(f"Temporary directory: {temp_dir}")
+    print("(This will be automatically cleaned up on exit)")
+    
+    try:
+        # Download the zip file
+        print("\nDownloading FoodDB JSON zip file...")
+        response = requests.get(zip_url, stream=True)
+        response.raise_for_status()
+        
+        total_size = int(response.headers.get('content-length', 0))
+        
+        # Download with progress bar
+        with open(zip_file, 'wb') as f, tqdm(
+            desc="Downloading foodb_2020_04_07_json.zip",
+            total=total_size,
+            unit='B',
+            unit_scale=True,
+            unit_divisor=1024
+        ) as pbar:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+                    pbar.update(len(chunk))
+        
+        # Extract the zip file
+        print("\nExtracting zip file...")
+        extract_dir = temp_dir / "foodb_extracted"
+        extract_dir.mkdir(exist_ok=True)
+        
+        with zipfile.ZipFile(zip_file, 'r') as zip_ref:
+            zip_ref.extractall(extract_dir)
+        
+        # Find Compound.json file
+        compound_json = extract_dir / "Compound.json"
+        
+        # Also check if it's in a subdirectory (common with zip files)
+        if not compound_json.exists():
+            # Search for Compound.json in extracted directory
+            found_files = list(extract_dir.rglob("Compound.json"))
+            if found_files:
+                compound_json = found_files[0]
+            else:
+                raise FileNotFoundError("Could not find Compound.json in extracted zip file")
+        
+        print(f"\nFound Compound.json at: {compound_json}")
+        print("Extracting SMILES strings...")
+        
+        # Count total lines for progress bar
+        print("Counting lines in Compound.json...")
+        with open(compound_json, 'r', encoding='utf-8') as f_in:
+            total_lines = sum(1 for line in f_in if line.strip())
+        
+        # Parse JSONL (JSON Lines) format - each line is a separate JSON object
+        count = 0
+        with open(compound_json, 'r', encoding='utf-8') as f_in:
+            with open(output_path, 'w') as f_out:
+                # Read file line by line for JSONL format
+                for line in tqdm(f_in, desc="Processing compounds", total=total_lines):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    try:
+                        compound = json.loads(line)
+                        # Extract moldb_smiles if it exists
+                        if isinstance(compound, dict) and 'moldb_smiles' in compound:
+                            smiles = compound['moldb_smiles']
+                            if smiles and isinstance(smiles, str) and smiles.strip():
+                                f_out.write(f"{smiles.strip()}\n")
+                                count += 1
+                    except json.JSONDecodeError as e:
+                        # Silently skip malformed lines
+                        continue
+        
+        print(f"\n{'='*60}")
+        print(f"Successfully extracted {count} SMILES strings")
+        print(f"SMILES strings saved to: {output_path.absolute()}")
+        print(f"{'='*60}")
+    
+    except KeyboardInterrupt:
+        print("\n\nInterrupted by user. Cleaning up temporary files...")
+        raise
+    except Exception as e:
+        print(f"\n\nError occurred: {e}")
+        print(f"Temporary files may remain at: {temp_dir}")
+        raise
+    finally:
+        # Clean up temporary directory
+        try:
+            if temp_dir.exists():
+                shutil.rmtree(temp_dir)
+                print(f"\nCleaned up temporary directory: {temp_dir}")
+        except Exception as cleanup_error:
+            print(f"\nWarning: Could not clean up temporary directory: {cleanup_error}")
+            print(f"Please manually remove: {temp_dir}")
 
 
 def main():
@@ -277,15 +423,19 @@ def main():
     print("=" * 60)
     print("\nAvailable data sources:")
     print("  (1) pubchem - PubChem compound database")
+    print("  (2) foodb - FoodDB compound database")
     
     choice = input("\nSelect data source (enter number): ").strip()
     
     if choice == '1':
         output_file = "data-processing/data/pubchem/pubchem_isomeric_smiles.txt"
         fetch_pubchem_smiles(output_file=output_file)
+    elif choice == '2':
+        output_file = "data-processing/data/foodb/foodb_smiles.txt"
+        fetch_foodb_smiles(output_file=output_file)
     else:
         print(f"\nError: '{choice}' is not a valid option.")
-        print("Please enter '1' to fetch PubChem data.")
+        print("Please enter '1' to fetch PubChem data or '2' to fetch FoodDB data.")
 
 
 if __name__ == "__main__":
