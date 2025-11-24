@@ -65,16 +65,16 @@ Train a RoBERTa model using masked language modeling on molecular SMILES data. *
 
 ```bash
 python chemberta/train/train_roberta.py \
-    --model_type=mlm \
-    --dataset_path=chemberta/data/foodb_1k_smiles.txt \
-    --output_dir=chemberta/train/my_training4 \
-    --run_name=test_run \
-    --per_device_train_batch_size=4 \
-    --num_hidden_layers=6 \
-    --num_attention_heads=12 \
-    --num_train_epochs=10 \
-    --eval_steps=50 \
-    --save_steps=50
+  --model_type=mlm \
+  --dataset_path=data-processing/data/pubchem/pubchem_smiles_all.txt \
+  --output_dir=chemberta/train/pubchem \
+  --run_name=1m \
+  --per_device_train_batch_size=4 \
+  --num_hidden_layers=6 \
+  --num_attention_heads=12 \
+  --num_train_epochs=10 \
+  --eval_steps=200 \
+  --save_steps=200
 ```
 
 **Parameters:**
