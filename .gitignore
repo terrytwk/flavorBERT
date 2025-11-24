@@ -142,6 +142,7 @@ cython_debug/
 
 # data files
 chemberta/data/pubchem_*/
+data-processing/data/*
 
 # tfevents
 events.out.tfevents*
