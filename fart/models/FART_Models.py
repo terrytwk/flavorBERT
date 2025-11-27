@@ -210,6 +210,18 @@ def parse_args():
         default=None,
         help="Path to model checkpoint (overrides default from config)"
     )
+    parser.add_argument(
+        "--eval_steps",
+        type=int,
+        default=None,
+        help="Step interval for evaluation, saving, and logging (overrides default from config for all three)"
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default=None,
+        help="Output directory for model checkpoints and results (overrides default from config)"
+    )
     return parser.parse_args()
 
 
@@ -230,6 +242,12 @@ def main():
             training_config.run_name = args.run_name
         if args.model_checkpoint is not None:
             model_config.model_checkpoint = args.model_checkpoint
+        if args.eval_steps is not None:
+            training_config.eval_steps = args.eval_steps
+            training_config.save_steps = args.eval_steps
+            training_config.logging_steps = args.eval_steps
+        if args.output_dir is not None:
+            training_config.output_dir = args.output_dir
 
         logger.info("=" * 80)
         logger.info("FART Model Training Pipeline")
@@ -237,6 +255,8 @@ def main():
         logger.info(f"Model checkpoint: {model_config.model_checkpoint}")
         logger.info(f"Tokenizer checkpoint: {model_config.tokenizer_checkpoint}")
         logger.info(f"Run name: {training_config.run_name}")
+        logger.info(f"Output directory: {training_config.output_dir}")
+        logger.info(f"Eval/Save/Logging steps: {training_config.eval_steps}")
         logger.info(f"Augmentation enabled: {augmentation_config.enabled}")
 
         # Prepare datasets (without tokenization and label encoding)

@@ -15,10 +15,10 @@ class ModelConfig:
 
 @dataclass
 class DataConfig:
-    """Data loading and preprocessing configuration."""
-    train_path: str = "../dataset/splits/fart_train.csv"
-    val_path: str = "../dataset/splits/fart_val.csv"
-    test_path: str = "../dataset/splits/fart_test.csv"
+    """Data loading and preprocessing configuration (paths are relative to the parent flavorBERT directory)."""
+    train_path: str = "fart/dataset/splits/fart_train.csv"
+    val_path: str = "fart/dataset/splits/fart_val.csv"
+    test_path: str = "fart/dataset/splits/fart_test.csv"
     smiles_column: str = "Canonicalized SMILES"
     label_column: str = "Canonicalized Taste"
     max_length: int = 512
@@ -42,15 +42,18 @@ class AugmentationConfig:
 @dataclass
 class TrainingConfig:
     """Training arguments configuration."""
-    output_dir: str = "./results"
+    output_dir: str = "./fart/models/results"
     logging_dir: str = "./logs"
-    run_name: Optional[str] = "<RUN_NAME>"
+    run_name: Optional[str] = "<FART_RUN>"
     num_train_epochs: int = 2
     per_device_train_batch_size: int = 16
     per_device_eval_batch_size: int = 16
     weight_decay: float = 0.01
     evaluation_strategy: str = "steps"
     save_strategy: str = "steps"
+    eval_steps: int = 500
+    save_steps: int = 500
+    logging_steps: int = 500
     load_best_model_at_end: bool = True
     save_total_limit: int = 5
 

@@ -206,7 +206,7 @@ def download_and_process_sdf(sdf_filename, ftp_base, output_file, temp_dir):
     return count
 
 
-def fetch_pubchem_smiles(output_file="data-processing/data/pubchem/pubchem_isomeric_smiles.txt", 
+def fetch_pubchem_smiles(output_file="data-processing/data/pubchem/pubchem_smiles_all.txt", 
                          ftp_base="https://ftp.ncbi.nlm.nih.gov/pubchem/Compound/CURRENT-Full/SDF/"):
     """
     Download all PubChem SDF files from FTP and extract SMILES strings.
@@ -287,7 +287,7 @@ def fetch_pubchem_smiles(output_file="data-processing/data/pubchem/pubchem_isome
     print(f"{'='*60}")
 
 
-def fetch_foodb_smiles(output_file="data-processing/data/foodb/foodb_smiles.txt",
+def fetch_foodb_smiles(output_file="data-processing/data/foodb/foodb_smiles_all.txt",
                        zip_url="https://foodb.ca/public/system/downloads/foodb_2020_04_07_json.zip"):
     """
     Download FoodDB JSON zip file and extract SMILES strings.
@@ -445,10 +445,10 @@ def main():
     choice = input("\nSelect data source (enter number): ").strip()
     
     if choice == '1':
-        output_file = "data-processing/data/pubchem/pubchem_isomeric_smiles.txt"
+        output_file = "data-processing/data/pubchem/pubchem_smiles_all.txt"
         fetch_pubchem_smiles(output_file=output_file)
     elif choice == '2':
-        output_file = "data-processing/data/foodb/foodb_smiles.txt"
+        output_file = "data-processing/data/foodb/foodb_smiles_all.txt"
         fetch_foodb_smiles(output_file=output_file)
     else:
         print(f"\nError: '{choice}' is not a valid option.")

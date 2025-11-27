@@ -65,16 +65,16 @@ Train a RoBERTa model using masked language modeling on molecular SMILES data. *
 
 ```bash
 python chemberta/train/train_roberta.py \
-  --model_type=mlm \
-  --dataset_path=data-processing/data/pubchem/pubchem_smiles_all.txt \
-  --output_dir=chemberta/train/pubchem \
-  --run_name=1m \
-  --per_device_train_batch_size=4 \
-  --num_hidden_layers=6 \
-  --num_attention_heads=12 \
-  --num_train_epochs=10 \
-  --eval_steps=200 \
-  --save_steps=200
+    --model_type=mlm \
+    --dataset_path=data-processing/data/foodb/foodb_smiles_all.txt \
+    --output_dir=chemberta/train/foodb \
+    --run_name=isomeric_all \
+    --per_device_train_batch_size=4 \
+    --num_hidden_layers=6 \
+    --num_attention_heads=12 \
+    --num_train_epochs=10 \
+    --eval_steps=1500 \
+    --save_steps=1500
 ```
 
 **Parameters:**
@@ -129,9 +129,11 @@ python chemberta/finetune/finetune.py \
 Evaluate the model on the FART dataset for flavor/taste prediction tasks:
 
 ```bash
-python fart/models/FART_Models.py \
-    --run_name my_experiment \
-    --model_checkpoint chemberta/train/my_training4/test_run/final
+python fart/models/FART_Models.py 
+  --run_name fart_foodb_all_10_augmented 
+  --model_checkpoint /home/terrytwk/orcd/pool/foodb_all_10_augmented/final 
+  --eval_steps 250 
+  --output_dir /home/terrytwk/orcd/pool/fart
 ```
 
 **Parameters:**
