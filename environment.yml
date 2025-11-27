@@ -17,14 +17,14 @@ dependencies:
   - pip
   - pre_commit
   - python=3.8
-  - pytorch
+  - pytorch>=2.1.0
   - rdkit
   - regex
   - s3fs
   - scikit-learn
   - scipy
   - seaborn
-  - torchvision
+  - torchvision>=0.16.0,<0.17.0
   - tqdm
   - transformers
   - wandb
