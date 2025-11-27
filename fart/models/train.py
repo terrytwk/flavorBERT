@@ -36,8 +36,11 @@ def setup_training_args(config: TrainingConfig) -> TrainingArguments:
         per_device_eval_batch_size=config.per_device_eval_batch_size,
         weight_decay=config.weight_decay,
         evaluation_strategy=config.evaluation_strategy,
+        eval_steps=config.eval_steps,
         logging_dir=config.logging_dir,
+        logging_steps=config.logging_steps,
         save_strategy=config.save_strategy,
+        save_steps=config.save_steps,
         load_best_model_at_end=config.load_best_model_at_end,
         save_total_limit=config.save_total_limit,
     )
