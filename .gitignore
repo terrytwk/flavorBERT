@@ -143,6 +143,8 @@ cython_debug/
 # data files
 chemberta/data/pubchem_*/
 data-processing/data/*
+chemberta/data/foodb
+chemberta/data/foodDataStructures
 
 # tfevents
 events.out.tfevents*
