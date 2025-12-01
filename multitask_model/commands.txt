@@ -1,0 +1,66 @@
+python sample_and_canonicalize.py pubchem-10m.txt 100000
+
+python3 train.py \
+    --general_chem_data=pubchem-10m_sampled_100000.txt \
+    --food_context_data=../chemberta/data/foodb_context.jsonl \
+    --food_vocab=../chemberta/data/foodb_context_food_vocab.json \
+    --output_dir=./results/multitask_run \
+    --run_name=multitask_v1 \
+    --num_train_epochs=5 \
+    --per_device_train_batch_size=256 \
+    --food_task_weight=0.3 \
+    --mlm_loss_weight=1.0 \
+    --food_loss_weight=1.0
+
+python fart_evaluate.py \
+    --model_checkpoint "./results/multitask_run_100k/final" \
+    --data_dir "./dataset/splits" \
+    --output_dir "./other_results" \
+    --epochs 2 \
+    --no_augmentation \
+    --batch_size 16
+
+python fart_evaluate.py \
+    --model_checkpoint seyonec/SMILES_tokenized_PubChem_shard00_160k \
+    --data_dir "./dataset/splits" \
+    --output_dir ./results_baseline \
+    --no_augmentation \
+    --batch_size 16
+
+python fart_evaluate.py \
+    --model_checkpoint "./results_baseline_fast_100k/roberta_mlm/final" \
+    --data_dir "./dataset/splits" \
+    --output_dir ./results_baseline_other \
+    --epochs 2 \
+    --no_augmentation \
+    --batch_size 16
+
+python vanillaRoberta.py \
+    --dataset_path="baseline_fair_data.txt" \
+    --output_dir="./results_baseline_fast" \
+    --tokenizer_type="smiles" \
+    --per_device_train_batch_size=256 \
+    --fp16
+
+python extractBaselineSmiles.py \
+    ../chemberta/data/foodb_context.jsonl \
+    baseline_fair_data_100k.txt \
+    --extra_smiles pubchem-10m_sampled_100000.txt
+
+python fart/models/FART_Models.py \
+  --run_name context_test \
+  --model_checkpoint /home/sonnybwu/researchProjects/flavorBERT/chemberta/train/foodb/test_run/final \
+  --eval_steps 250 \
+  --output_dir /home/sonnybwu/researchProjects/flavorBERT/multitask_model/resultsContext
+
+python chemberta/train/train_roberta.py \
+    --model_type=mlm \
+    --dataset_path=/home/sonnybwu/researchProjects/flavorBERT/multitask_model/baseline_fair_data_100k.txt \
+    --output_dir=chemberta/train/foodb \
+    --run_name=test_run \
+    --per_device_train_batch_size=256 \
+    --num_hidden_layers=6 \
+    --num_attention_heads=12 \
+    --num_train_epochs=5 \
+    --eval_steps=1500 \
+    --save_steps=1500
