@@ -24,6 +24,26 @@ The FART dataset is the largest publicly available collection of molecular tasta
 
 `FART_dataset_enrichment.ipynb` can be optionally used to retrieve more features for molecules which are also listed on PubChem. This script produces the `fart_enriched.csv` dataset which additionally includes the columns `PubChemID`, `IUPAC Name`, `Molecular Formula`, `Molecular Weight`, `InChI` and `InChiKey`. 
 
+## Isomeric SMILES Standardization
+
+To ensure consistent molecular representation across the dataset, the following scripts standardize all SMILES to isomeric format, which preserves stereochemical information (unlike canonical SMILES). This is important because the original dataset contained a mix of isomeric and non-isomeric SMILES representations.
+
+### Workflow:
+
+1. **`get_pubchem_cid_from_phytocompounds.py`**: Extracts PubChem Compound IDs (CIDs) for compounds in the phytocompounds database by scraping their web pages. This is a prerequisite step to enable isomeric SMILES lookup for phytocompound entries.
+
+2. **`data_extraction.py`**: Creates `fart_uncurated_with_ids.csv` by combining data from individual datasets and enriching entries with PubChem identifiers (PubChemID, InChI, and INCHIKEY). This file serves as a lookup table for mapping canonical SMILES to PubChem identifiers needed for isomeric SMILES retrieval.
+
+3. **`add_isomeric_smiles.py`**: Processes the split datasets (`fart_train.csv`, `fart_val.csv`, `fart_test.csv`) to replace canonical SMILES with isomeric SMILES from PubChem. This script:
+   - Matches entries by canonical SMILES to `fart_uncurated_with_ids.csv`
+   - Uses PubChem IDs, InChI, or INCHIKEY to fetch isomeric SMILES via the PubChem API
+   - Replaces the "Canonicalized SMILES" column with isomeric SMILES where available
+   - Removes the "is_multiclass" column
+   - Uses optimized batch processing (up to 100 compounds per API request) to comply with PubChem rate limits (5 requests/second)
+   - Outputs standardized split files in `dataset/isomeric-splits/` with the same filenames
+
+The resulting isomeric-splits ensure all molecular structures are represented consistently with stereochemistry preserved, which is crucial for accurate taste prediction models.
+
 ## Random Forest Models 
 
 All three tree-based classifiers were trained in `model/Tree-Baseline-Models.ipynb`.
