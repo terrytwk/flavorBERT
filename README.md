@@ -126,20 +126,41 @@ python chemberta/finetune/finetune.py \
 
 ### 3. FART Evaluation (Flavor Prediction)
 
-Evaluate the model on the FART dataset for flavor/taste prediction tasks:
+Evaluate the model on the FART dataset for flavor/taste prediction tasks.
+
+**Option A: Full pipeline (config-driven)**
 
 ```bash
-python fart/models/FART_Models.py 
-  --run_name fart_foodb_all_10_augmented 
-  --model_checkpoint /home/terrytwk/orcd/pool/foodb_all_10_augmented/final 
-  --eval_steps 250 
-  --output_dir /home/terrytwk/orcd/pool/fart
+python fart/models/FART_Models.py \
+  --run_name fart_foodb_all_10_augmented \
+  --model_checkpoint /home/terrytwk/orcd/pool/foodb_all_10_augmented/final \
+  --eval_steps 250 \
+  --output_dir /home/terrytwk/orcd/pool/fart-metrics
+```
+
+**Option B: Single-file runner (saves plots + summary)**
+
+`fart/models/fart_evaluate.py` is a standalone script that trains/evaluates, saves ROC curves and confusion matrix PNGs, and writes `run_summary.json` (includes per-class test metrics) under `output_dir/run_name/`.
+
+Example:
+
+```bash
+python fart/models/fart_evaluate.py \
+  --model_checkpoint /home/terrytwk/orcd/pool/chemberta/foodb_all_10_augmented/final \
+  --data_dir fart/dataset/splits \
+  --output_dir /home/terrytwk/orcd/pool/fart-metrics \
+  --run_name fart_foodb_all_10_augmented \
+  --batch_size 16 \
+  --no_augmentation
 ```
 
 **Parameters:**
 
 - `--run_name`: Experiment name for logging
 - `--model_checkpoint`: Path to pre-trained or fine-tuned model checkpoint
+- `--data_dir`: Directory with `fart_train.csv`, `fart_val.csv`, `fart_test.csv`
+- `--output_dir`: Base directory to store results (plots + summary)
+- `--no_augmentation`: Disable SMILES augmentation (default is enabled)
 
 The FART evaluation predicts taste categories (sweet, bitter, sour, umami, undefined) from molecular SMILES strings.
 
